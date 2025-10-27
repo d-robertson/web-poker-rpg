@@ -80,6 +80,7 @@ export function PlayerActions({
             onChange={(e) => setBetAmount(Number(e.target.value))}
             min={minBet}
             max={effectiveMaxBet}
+            autoFocus
             className="w-full px-1.5 py-0.5 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none text-xs"
           />
           <input

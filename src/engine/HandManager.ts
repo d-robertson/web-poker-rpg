@@ -89,16 +89,17 @@ export class HandManager {
       throw new Error(`Cannot start hand from state: ${this.currentState}`)
     }
 
+    this.handNumber++
+
+    // Prepare deck and reset table FIRST (must be done before checking player count)
+    this.dealer.prepareNewHand()
+
+    // Now check player count after statuses have been reset
     const playerCount = this.table.getActivePlayers().length
 
     if (playerCount < 2) {
       throw new Error('Need at least 2 players to start hand')
     }
-
-    this.handNumber++
-
-    // Prepare deck and reset table FIRST
-    this.dealer.prepareNewHand()
 
     // Post blinds
     this.setState(GameState.PostingBlinds)
@@ -246,7 +247,10 @@ export class HandManager {
     // Determine winners and distribute pots
     const winners = this.dealer.distributePots(this.potManager)
 
-    this.setState(GameState.HandComplete)
+    // Only set state to HandComplete if not already there
+    if (this.currentState !== GameState.HandComplete) {
+      this.setState(GameState.HandComplete)
+    }
 
     return {
       winners,

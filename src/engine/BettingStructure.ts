@@ -177,15 +177,37 @@ export class BettingRoundTracker {
   isRoundComplete(): boolean {
     const activePlayers = this.table.getActivePlayers()
 
-    // Need at least 2 players who can still act
+    // Get players who can still take betting actions
     const playersWhoCanAct = activePlayers.filter(p => !p.isAllIn && !p.hasFolded)
 
-    if (playersWhoCanAct.length <= 1) {
-      return true // Only 0-1 players can act, round is over
+    // If NO players can act (all folded or all-in), round is over
+    if (playersWhoCanAct.length === 0) {
+      return true
     }
 
+    // If exactly 1 player can act, determine if round is complete
+    if (playersWhoCanAct.length === 1) {
+      // If there's only one active player total, everyone else folded - round complete immediately
+      if (activePlayers.length === 1) {
+        return true
+      }
+
+      // Otherwise, there are all-in players, so check if solo player has acted
+      const soloPlayer = playersWhoCanAct[0]
+      // If they haven't acted yet, round is not complete
+      if (!this.playersActed.has(soloPlayer.id)) {
+        return false
+      }
+      // If they haven't matched the current bet, round is not complete
+      if (soloPlayer.currentBetAmount < this.currentBetAmount) {
+        return false
+      }
+      // Otherwise, they've acted and matched (or bet themselves), round is complete
+      return true
+    }
+
+    // For 2+ players who can act:
     // Check if all players have matched the current bet or folded/all-in
-    // This is the definitive check - if everyone has matched, round is complete
     for (const player of activePlayers) {
       if (player.hasFolded || player.isAllIn) {
         continue

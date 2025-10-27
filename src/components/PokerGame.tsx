@@ -5,6 +5,8 @@ import { GameState } from '../engine/GameState'
 import { PokerTable } from './PokerTable'
 import { PlayerActions } from './PlayerActions'
 import { ActionLog } from './ActionLog'
+import { HandEvaluator } from '../engine/HandEvaluator'
+import { createCard } from '../models/Card'
 
 export function PokerGame() {
   const {
@@ -247,9 +249,48 @@ export function PokerGame() {
               </div>
             </div>
 
-            {/* Right Third: Reserved */}
-            <div className="w-1/3">
-              {/* Reserved for future use */}
+            {/* Right Third: Hand Analysis */}
+            <div className="w-1/3 flex flex-col justify-center items-center">
+              <div className="text-center">
+                <div className="text-[10px] text-gray-400 mb-1">Current Hand</div>
+                {(() => {
+                  const holeCards = humanPlayer.getHoleCards()
+                  const community = communityCards.map((shorthand) => createCard(shorthand))
+                  const allCards = [...holeCards, ...community]
+
+                  if (allCards.length < 5) {
+                    return (
+                      <div className="text-gray-500 text-xs italic">
+                        {allCards.length === 0 ? 'No cards dealt' : 'Waiting for flop...'}
+                      </div>
+                    )
+                  }
+
+                  try {
+                    const bestHand =
+                      allCards.length === 7
+                        ? HandEvaluator.evaluateBest7CardHand(allCards)
+                        : HandEvaluator.evaluateHand(allCards.slice(0, 5))
+
+                    return (
+                      <>
+                        <div className="font-bold text-green-400 text-sm mb-1">
+                          {bestHand.description}
+                        </div>
+                        <div className="text-[9px] text-gray-400">
+                          {bestHand.name}
+                        </div>
+                      </>
+                    )
+                  } catch (error) {
+                    return (
+                      <div className="text-red-400 text-xs">
+                        Error evaluating hand
+                      </div>
+                    )
+                  }
+                })()}
+              </div>
             </div>
           </div>
         )}

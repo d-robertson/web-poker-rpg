@@ -130,10 +130,25 @@ export class Dealer {
     // If only one player left (others folded), they win by default
     if (players.length === 1) {
       const winner = players[0]!
+      const holeCards = winner.getHoleCards()
+      const allCards = holeCards.concat(communityCards)
+
       // Create a dummy hand ranking since they won by fold
-      const dummyHand = HandEvaluator.evaluateHand(
-        winner.getHoleCards().concat(communityCards).slice(0, 5)
-      )
+      let dummyHand: HandRanking
+
+      if (allCards.length >= 5) {
+        // We have enough cards to evaluate
+        dummyHand = HandEvaluator.evaluateHand(allCards.slice(0, 5))
+      } else {
+        // Not enough cards yet (e.g., won preflop), create a simple high card hand
+        dummyHand = {
+          rank: 1, // High card
+          description: 'High Card (won by fold)',
+          value: 0,
+          compareTo: () => 0
+        }
+      }
+
       return [{ player: winner, hand: dummyHand }]
     }
 

@@ -213,8 +213,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   // Process AI player actions
   processAIActions: () => {
-    const { handManager, table, currentPlayerId, version } = get()
+    const { handManager, table, currentPlayerId, version, gameState } = get()
     if (!handManager || !table || !currentPlayerId) {
+      return
+    }
+
+    // Don't process AI actions if hand is complete or in showdown
+    if (gameState === GameState.HandComplete || gameState === GameState.Showdown || gameState === GameState.GameOver) {
       return
     }
 
@@ -312,10 +317,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
       setTimeout(() => {
         get().processAIActions()
       }, 1000)
-    } else if (newState === GameState.Showdown) {
-      // Perform showdown after a short delay
+    } else if (newState === GameState.Showdown || newState === GameState.HandComplete) {
+      // Perform showdown after a short delay (handles both showdown and early wins by fold)
       setTimeout(() => {
-        log('\n🏆 === SHOWDOWN ===')
+        if (newState === GameState.Showdown) {
+          log('\n🏆 === SHOWDOWN ===')
+        } else {
+          log('\n🏆 === HAND WON (All others folded) ===')
+        }
         const result = get().performShowdown()
 
         // Log winners
@@ -334,6 +343,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
           // Auto-start next hand
           setTimeout(() => {
             get().startHand()
+            // Start processing AI actions
+            setTimeout(() => {
+              get().processAIActions()
+            }, 1000)
           }, 1000)
         }, 3000) // Give 3 seconds to see the results
       }, 1000)
