@@ -7,6 +7,8 @@ import { PlayerActions } from './PlayerActions'
 import { ActionLog } from './ActionLog'
 import { HandEvaluator } from '../engine/HandEvaluator'
 import { createCard } from '../models/Card'
+import { AIPlayer } from '../engine/AIPlayer'
+import { SKILL_LEVELS } from '../engine/GTOTypes'
 
 export function PokerGame() {
   const {
@@ -68,9 +70,6 @@ export function PokerGame() {
         })
 
         // Assign AI skill levels after adding players
-        const { AIPlayer } = require('../engine/AIPlayer')
-        const { SKILL_LEVELS } = require('../engine/GTOTypes')
-
         AIPlayer.assignSkillLevel('ai-1', SKILL_LEVELS.ADVANCED) // Alice
         AIPlayer.assignSkillLevel('ai-2', SKILL_LEVELS.INTERMEDIATE) // Bob
         AIPlayer.assignSkillLevel('ai-3', SKILL_LEVELS.BEGINNER) // Charlie

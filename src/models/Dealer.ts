@@ -3,7 +3,7 @@ import { Table } from './Table'
 import { Player } from './Player'
 import { Card } from './Card'
 import { HandEvaluator } from '../engine/HandEvaluator'
-import { HandRanking } from '../engine/HandRanking'
+import { HandRanking, HandRank } from '../engine/HandRanking'
 import { PotManager } from '../engine/BettingStructure'
 
 export interface WinnerResult {
@@ -140,13 +140,14 @@ export class Dealer {
         // We have enough cards to evaluate
         dummyHand = HandEvaluator.evaluateHand(allCards.slice(0, 5))
       } else {
-        // Not enough cards yet (e.g., won preflop), create a simple high card hand
-        dummyHand = {
-          rank: 1, // High card
-          description: 'High Card (won by fold)',
-          value: 0,
-          compareTo: () => 0
-        }
+        // Not enough cards yet (e.g., won preflop), create a dummy HandRanking
+        dummyHand = new HandRanking(
+          HandRank.HighCard,
+          holeCards,
+          0, // primaryValue
+          0, // secondaryValue
+          [] // kickers
+        )
       }
 
       return [{ player: winner, hand: dummyHand }]
