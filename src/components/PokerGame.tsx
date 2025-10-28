@@ -54,11 +54,11 @@ export function PokerGame() {
       // Add human player
       const humanPlayer = new Player('human-player', 'You', 1000)
 
-      // Add AI players
+      // Add AI players with skill levels
       const aiPlayers = [
-        new Player('ai-1', 'Alice', 1000),
-        new Player('ai-2', 'Bob', 1000),
-        new Player('ai-3', 'Charlie', 800),
+        new Player('ai-1', 'Alice', 1000), // Advanced (80%)
+        new Player('ai-2', 'Bob', 1000), // Intermediate (65%)
+        new Player('ai-3', 'Charlie', 800), // Beginner (45%)
       ]
 
       try {
@@ -66,6 +66,14 @@ export function PokerGame() {
         aiPlayers.forEach((player, index) => {
           addPlayer(player, index + 1)
         })
+
+        // Assign AI skill levels after adding players
+        const { AIPlayer } = require('../engine/AIPlayer')
+        const { SKILL_LEVELS } = require('../engine/GTOTypes')
+
+        AIPlayer.assignSkillLevel('ai-1', SKILL_LEVELS.ADVANCED) // Alice
+        AIPlayer.assignSkillLevel('ai-2', SKILL_LEVELS.INTERMEDIATE) // Bob
+        AIPlayer.assignSkillLevel('ai-3', SKILL_LEVELS.BEGINNER) // Charlie
       } catch (error) {
         console.error('Failed to add players:', error)
       }

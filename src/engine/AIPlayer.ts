@@ -1,82 +1,71 @@
 import { Player } from '../models/Player'
 import { HandManager } from './HandManager'
+import { GTOEngine } from './GTOEngine'
+import { AISkillLevel, SKILL_LEVELS, ActionType } from './GTOTypes'
 
 /**
- * Simple AI decision making for poker players
+ * GTO-based AI decision making for poker players
+ * Uses realistic poker strategy with skill-based adherence
  */
 export class AIPlayer {
+  // Store skill levels for each AI player
+  private static playerSkills = new Map<string, AISkillLevel>()
+
   /**
-   * Makes a decision for an AI player
+   * Assign a skill level to an AI player
+   */
+  static assignSkillLevel(playerId: string, skillLevel: AISkillLevel): void {
+    this.playerSkills.set(playerId, skillLevel)
+  }
+
+  /**
+   * Get skill level for a player (defaults to intermediate if not set)
+   */
+  static getSkillLevel(playerId: string): AISkillLevel {
+    return this.playerSkills.get(playerId) || SKILL_LEVELS.INTERMEDIATE
+  }
+
+  /**
+   * Makes a decision for an AI player using GTO engine
    * Returns the action and optional amount
    */
   static makeDecision(
     player: Player,
     handManager: HandManager
   ): { action: 'fold' | 'check' | 'call' | 'bet' | 'raise'; amount?: number; callAmount?: number } {
+    const skillLevel = this.getSkillLevel(player.id)
     const callAmount = handManager.getCallAmount(player)
-    const currentBet = handManager.getCurrentBet()
-    const minRaise = handManager.getMinRaise()
 
-    // Simple decision logic based on call amount and position
-    const potOdds = callAmount / (handManager.getCurrentPot() + callAmount || 1)
+    // Use GTO engine to make decision
+    const decision = GTOEngine.makeDecision(player, handManager, skillLevel)
 
-    // Very simple AI logic - just for basic gameplay
-    // In a real implementation, this would use hand strength evaluation
-
-    // If no bet to call (can check)
-    if (callAmount === 0) {
-      // 30% chance to bet/raise, 70% chance to check
-      if (Math.random() < 0.3 && player.chips >= minRaise) {
-        // If player already has a bet (like BB with blind), use raise instead of bet
-        if (player.currentBetAmount > 0) {
-          return { action: 'raise', amount: minRaise, callAmount: 0 }
-        }
-        return { action: 'bet', amount: minRaise, callAmount: 0 }
-      }
-      return { action: 'check', callAmount: 0 }
+    // Convert ActionType enum to string for compatibility
+    let action: 'fold' | 'check' | 'call' | 'bet' | 'raise'
+    switch (decision.action) {
+      case ActionType.FOLD:
+        action = 'fold'
+        break
+      case ActionType.CHECK:
+        action = 'check'
+        break
+      case ActionType.CALL:
+        action = 'call'
+        break
+      case ActionType.BET:
+        action = 'bet'
+        break
+      case ActionType.RAISE:
+        action = 'raise'
+        break
+      default:
+        action = 'fold'
     }
 
-    // If there's a bet to call
-    if (callAmount > 0) {
-      // Can't afford to call
-      if (callAmount > player.chips) {
-        // Go all-in if the pot odds are good (simplified)
-        if (potOdds < 0.3) {
-          return { action: 'call', callAmount } // Will go all-in
-        }
-        return { action: 'fold' }
-      }
-
-      // Decide based on pot odds and randomness
-      if (potOdds > 0.5) {
-        // Bad pot odds - fold more often
-        if (Math.random() < 0.7) {
-          return { action: 'fold' }
-        }
-        return { action: 'call', callAmount }
-      } else if (potOdds > 0.3) {
-        // Medium pot odds - mostly call, sometimes fold
-        if (Math.random() < 0.2) {
-          return { action: 'fold' }
-        } else if (Math.random() < 0.8) {
-          return { action: 'call', callAmount }
-        } else if (player.chips >= minRaise) {
-          return { action: 'raise', amount: minRaise }
-        }
-        return { action: 'call', callAmount }
-      } else {
-        // Good pot odds - mostly call/raise
-        if (Math.random() < 0.6) {
-          return { action: 'call', callAmount }
-        } else if (player.chips >= minRaise) {
-          return { action: 'raise', amount: minRaise }
-        }
-        return { action: 'call', callAmount }
-      }
+    return {
+      action,
+      amount: decision.amount,
+      callAmount,
     }
-
-    // Default: check if possible, otherwise fold
-    return callAmount === 0 ? { action: 'check', callAmount: 0 } : { action: 'fold' }
   }
 
   /**
